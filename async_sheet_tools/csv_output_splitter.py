@@ -34,6 +34,7 @@ def format_output_csv(filename:str = "output.csv", output_filename:str = "format
                 # get all the actually rolled options and their index in the list
                 # the index is used to filter for the relevant options later
                 all_options_indices = {option_name:index for index, option_name in enumerate(row)}
+                all_options_indices[len(row)] = "Slot Type"
             else:
                 game_name = row[1]
                 # try just for good measure to filter out games that are not included in the gameoption_whitelist.yaml
@@ -47,8 +48,13 @@ def format_output_csv(filename:str = "output.csv", output_filename:str = "format
                     # skip the first 2 options because those are only there to make is easy to past into the big
                     # async sheet
                     for option in game_option_whitelist[2:]:
-                        option_index = all_options_indices[option]
-                        slot_options.append(row[option_index])
+                        if option == "Slot Type":
+                            size = row[all_options_indices["Maximum Campaign Size"]]
+                            slot_options.append(sc2_map_campaign_size_to_slot_type[size])
+                        else:
+                            option_index = all_options_indices[option]
+                            slot_options.append(row[option_index])
+
                     # append that slots options into the output template
                     generated_options_per_slot[game_name].append(slot_options)
                 except (KeyError, TypeError, IndexError, AttributeError) as e:
@@ -56,6 +62,10 @@ def format_output_csv(filename:str = "output.csv", output_filename:str = "format
     # prep for saving as .ods
     output = dict()
     for game in options_dict.keys():
+
+        #if game != "Starcraft 2": # TODO: remove this, for testing only
+        #    continue
+
         # this creates a sheet for every game
         # maybe it's possible to do that all in one sheet but this is a simple and clean way for now
         game_name_cleaned = game
@@ -68,11 +78,23 @@ def format_output_csv(filename:str = "output.csv", output_filename:str = "format
     save_data(f"{output_filename}.ods", output)
     print("done")
 
+sc2_map_campaign_size_to_slot_type: dict[str, str] = {
+    '60': "Standard",
+    '50': "Challenge",
+    '45': "Free to Play",
+    '55': "No NCO",
+    '30': "Single Race",
+    '83': "Vanilla",
+    '195': "Full Campaign",
+    '105': "Big Async Logo",
+    '54': "Swap of the Race",
+}
+
 if __name__ == "__main__":
     cmd_parser = argparse.ArgumentParser(
         prog="Big Async Options Sheet creator",
-        description="""This script is used for converting the generations options-CSV into the format of the 
-        Big-Async spreadsheet and separating each games the options  
+        description="""This script is used for converting the generations options-CSV into the format of the
+        Big-Async spreadsheet and separating each games the options
         """,
     )
     cmd_parser.add_argument("-I", "--input", type=str)
