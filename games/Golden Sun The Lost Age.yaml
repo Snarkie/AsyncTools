@@ -7,8 +7,6 @@
   coop: all
     # Ensure all items are considered remote so that if players drop a slot it can be picked up easily by other players. This does not affect djinn unfortunately.
 
-
-
   ################
   # General Pool #
   ################
